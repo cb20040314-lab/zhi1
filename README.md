@@ -18,9 +18,21 @@ Windows PowerShell 下启动：`$env:MOCK_AI="1"; python -m uvicorn app.main:app
 接入真实 AI 时：设置环境变量后关闭 Mock。
 
 ```bash
-MOCK_AI=0 ASR_API_KEY=... LLM_API_KEY=... LLM_BASE_URL=... LLM_MODEL=... TTS_API_KEY=... \
+# LLM 示例：DeepSeek（任选一家 OpenAI 兼容平台，见下表）
+MOCK_AI=0 LLM_API_KEY=sk-xxx LLM_BASE_URL=https://api.deepseek.com LLM_MODEL=deepseek-chat \
+  ASR_API_KEY=sk-xxx ASR_BASE_URL=https://api.openai.com/v1 ASR_MODEL=whisper-1 \
+  TTS_API_KEY=sk-xxx TTS_BASE_URL=https://api.openai.com/v1 TTS_MODEL=tts-1 TTS_VOICE=alloy \
   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+### AI 环境变量一览
+
+| 变量 | 用途 | 国内平台参考 |
+|---|---|---|
+| `MOCK_AI` | `1`=Mock（默认）`0`=真实 AI | — |
+| `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL` | 对话模型（OpenAI 兼容 chat/completions） | DeepSeek `https://api.deepseek.com`+`deepseek-chat`；智谱 `https://open.bigmodel.cn/api/paas/v4`+`glm-4-flash`（免费）；通义 `https://dashscope.aliyuncs.com/compatible-mode/v1`+`qwen-plus`；硅基流动 `https://api.siliconflow.cn/v1` |
+| `ASR_API_KEY` / `ASR_BASE_URL` / `ASR_MODEL` | 语音识别（OpenAI 兼容 /audio/transcriptions） | OpenAI `whisper-1`；硅基流动/火山方舟同接口 |
+| `TTS_API_KEY` / `TTS_BASE_URL` / `TTS_MODEL` / `TTS_VOICE` | 语音合成（OpenAI 兼容 /audio/speech） | OpenAI `tts-1`+`alloy`；硅基流动同接口 |
 
 > 密钥只从环境变量读取，代码中不出现任何密钥明文。树莓派建议单 worker。
 

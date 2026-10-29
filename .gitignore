@@ -12,3 +12,6 @@ app/data/*.db-wal
 venv/
 .env
 .vscode/
+
+# Test artifacts
+scripts/smoke_out.txt

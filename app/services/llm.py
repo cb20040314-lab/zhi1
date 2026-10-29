@@ -1,12 +1,16 @@
 """LLM 服务适配：根据上下文生成教育机器人回复。
 
 Mock 模式：按回合返回预置的教育回复。
-真实模式：调用外部 LLM（如 OpenAI 兼容接口），密钥只从环境变量读取（LLM_API_KEY、
-LLM_BASE_URL、LLM_MODEL），固定超时 + 一次重试。
+真实模式（MOCK_AI=0）：调用 OpenAI 兼容的 /chat/completions 接口
+（OpenAI、DeepSeek、智谱 GLM、通义千问、Kimi、硅基流动、火山方舟等均兼容），
+密钥只从环境变量读取，固定超时 + 一次重试。
 """
 from __future__ import annotations
 
 import os
+import time
+
+import httpx
 
 from .errors import AIServiceError
 
@@ -19,6 +23,8 @@ MOCK_REPLIES = [
     "蜜蜂采蜜时会把花蜜吸进肚子里，带回蜂巢后吐出来反复酿造，水分蒸发后就变成了蜂蜜。它们也是植物授粉的重要帮手。",
 ]
 
+_TIMEOUT_S = 30
+
 
 def _is_mock() -> bool:
     return os.getenv("MOCK_AI", "1") == "1"
@@ -30,15 +36,16 @@ def generate_reply(transcript: str, history: list[dict], turn_index: int) -> str
         return MOCK_REPLIES[turn_index % len(MOCK_REPLIES)]
 
     api_key = os.getenv("LLM_API_KEY", "")
-    base_url = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
+    base_url = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     model = os.getenv("LLM_MODEL", "gpt-4o-mini")
     if not api_key:
-        raise AIServiceError("LLM_API_KEY 未设置")
+        raise AIServiceError("CONFIG_ERROR", "LLM_API_KEY 未设置")
 
-    # 组装带教育角色的提示词（保留结构化画像所需的理由深度引导）
+    # 教育角色提示词：引导批判思维（画像中的"理由深度"依赖这一层的回答质量）
     system = (
         "你是面向小学生的教育机器人助手。回答要准确、通俗、有鼓励性，"
-        "并适当追问或给出一个思考题，帮助孩子培养批判性思维。"
+        "尽量用因果解释（因为/所以），并在结尾提出一个追问或思考题，"
+        "帮助孩子培养批判性思维。回答控制在200字以内。"
     )
     messages = [{"role": "system", "content": system}]
     for h in history:
@@ -46,14 +53,34 @@ def generate_reply(transcript: str, history: list[dict], turn_index: int) -> str
         messages.append({"role": "assistant", "content": h["reply"]})
     messages.append({"role": "user", "content": transcript})
 
-    # ---- 真实 LLM 适配点：超时 + 一次重试 ----
-    # try:
-    #     resp = httpx.post(f"{base_url}/chat/completions", headers={...},
-    #                       json={"model": model, "messages": messages}, timeout=20)
-    #     resp.raise_for_status()
-    #     return resp.json()["choices"][0]["message"]["content"]
-    # except httpx.TimeoutException:
-    #     raise AIServiceError("AI_TIMEOUT", "LLM 请求超时")
-    # except Exception:
-    #     raise AIServiceError("AI_ERROR", "LLM 请求失败")
-    raise AIServiceError("LLM_API_KEY 未设置且未实现真实 LLM 适配")
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": 300,
+    }
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    for attempt in range(2):
+        try:
+            resp = httpx.post(
+                f"{base_url}/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=_TIMEOUT_S,
+            )
+            if resp.status_code == 429 and attempt == 0:
+                time.sleep(1)
+                continue
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"]
+            return content.strip()
+        except httpx.TimeoutException:
+            raise AIServiceError("AI_TIMEOUT", "LLM 请求超时")
+        except httpx.HTTPStatusError as e:
+            raise AIServiceError("AI_ERROR", f"LLM 请求失败 HTTP {e.response.status_code}")
+        except (KeyError, IndexError, ValueError):
+            raise AIServiceError("AI_ERROR", "LLM 响应格式异常")
+        except Exception as e:
+            raise AIServiceError("AI_ERROR", f"LLM 请求异常: {e}")
+    raise AIServiceError("AI_ERROR", "LLM 请求失败（已重试一次）")
