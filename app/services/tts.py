@@ -18,7 +18,7 @@ STATIC_AUDIO_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "audio"
 )
 
-_TIMEOUT_S = 30
+_TIMEOUT_S = 90
 
 
 def _is_mock() -> bool:

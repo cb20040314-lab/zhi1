@@ -22,7 +22,7 @@ MOCK_TRANSCRIPTS = [
     "我想知道蜜蜂是怎么采蜜的",
 ]
 
-_TIMEOUT_S = 30
+_TIMEOUT_S = 60
 
 
 def _is_mock() -> bool:

@@ -219,6 +219,7 @@
     fd.append("session_id", sid);
     fd.append("audio", f);
     $("btnSend").disabled = true;
+    $("turnOut").innerHTML = "<div class='label'>正在处理：语音识别 → 生成回答 → 合成语音（真实 AI 约 10~90 秒，请勿关闭页面）</div>";
     try {
       var r = await api("/api/turn", { method: "POST", body: fd });
       turnNo = r.turn;
