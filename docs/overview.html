@@ -1,0 +1,72 @@
+<html style="margin:0;padding:0;">
+<title>智能教育机器人三方对接全景图</title>
+<div style="width:100%;box-sizing:border-box;font-family:'Microsoft YaHei',sans-serif;background:#f6f8fb;padding:16px;">
+  <div style="font-size:20px;font-weight:700;color:#1f2d3d;margin-bottom:2px;">智能教育机器人 · 三方对接全景图</div>
+  <div style="font-size:13px;color:#5e6d82;margin-bottom:12px;">数据契约 v2.0 ｜ 接口对接导览 ｜ 2026-10-29</div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:10px;">
+
+    <div style="flex:1;min-width:190px;background:#fff;border:1px solid #e0e6ed;border-radius:10px;overflow:hidden;">
+      <div style="background:#eceff1;padding:8px 12px;font-size:14px;font-weight:700;color:#37474f;">采集负责人（手机）</div>
+      <div style="padding:10px 12px;font-size:13px;color:#455a64;">
+        <div style="background:#f0f4f8;border-radius:6px;padding:8px;margin-bottom:6px;"><b>产出</b>：录音 / 人脸特征</div>
+        <div style="font-size:12.5px;line-height:1.7;">
+          <b>对接接口</b><br>
+          → POST /api/turn（音频）<br>
+          → POST /api/focus（特征）<br>
+          <span style="color:#90a4ae;">不碰：页面、报告查询</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1.3;min-width:230px;background:#e3f2fd;border:2px solid #42a5f5;border-radius:10px;overflow:hidden;">
+      <div style="background:#1565c0;color:#fff;padding:8px 12px;font-size:14px;font-weight:700;">大数据构建（树莓派）· 你在这</div>
+      <div style="padding:10px 12px;font-size:13px;">
+        <div style="background:#fff;border-radius:6px;padding:8px;margin-bottom:6px;font-size:12.5px;line-height:1.7;">
+          <b>6 个公开接口</b><br>
+          POST /api/session/start｜POST /api/turn<br>
+          POST /api/focus｜POST /api/session/end<br>
+          GET /api/report/{id}｜GET /api/health
+        </div>
+        <div style="font-size:12.5px;line-height:1.7;color:#0d47a1;">
+          内部：SQLite 存储 · ASR 听懂 · LLM 思考<br>
+          TTS 说话 · 专注度评分 · 画像报告
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:190px;background:#fff;border:1px solid #e0e6ed;border-radius:10px;overflow:hidden;">
+      <div style="background:#eceff1;padding:8px 12px;font-size:14px;font-weight:700;color:#37474f;">客户端负责人（页面）</div>
+      <div style="padding:10px 12px;font-size:13px;color:#455a64;">
+        <div style="background:#f0f4f8;border-radius:6px;padding:8px;margin-bottom:6px;"><b>消费</b>：回复 / 音频 / 报告</div>
+        <div style="font-size:12.5px;line-height:1.7;">
+          <b>对接接口</b><br>
+          → POST /api/session/start<br>
+          → POST /api/session/end<br>
+          → GET /api/report/{id}<br>
+          另调采集模块 Capture.*<br>
+          <span style="color:#90a4ae;">不碰：turn/focus（由采集上传）</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:12px;background:#fff;border:1px solid #e0e6ed;border-radius:10px;padding:12px 14px;">
+    <div style="font-size:15px;font-weight:700;color:#1f2d3d;margin-bottom:8px;">一次完整演示的请求时序</div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#37474f;">
+      <div style="display:flex;gap:8px;"><span style="background:#1565c0;color:#fff;border-radius:4px;padding:1px 8px;font-weight:700;">①</span><span><b>客户端</b> POST /api/session/start → 拿到 <code>session_id</code>（此后三方所有请求都带它）</span></div>
+      <div style="display:flex;gap:8px;"><span style="background:#455a64;color:#fff;border-radius:4px;padding:1px 8px;font-weight:700;">②</span><span><b>客户端</b> 初始化 video 元素 → 调 <code>Capture.startMonitoring(video, sid)</code> 交给采集</span></div>
+      <div style="display:flex;gap:8px;"><span style="background:#455a64;color:#fff;border-radius:4px;padding:1px 8px;font-weight:700;">③</span><span><b>采集</b> 每 1~2 秒 POST /api/focus 上传人脸特征（表情/朝向/眼睛/质量）</span></div>
+      <div style="display:flex;gap:8px;"><span style="background:#455a64;color:#fff;border-radius:4px;padding:1px 8px;font-weight:700;">④</span><span><b>采集</b> 用户按住说话 → POST /api/turn 上传音频 → 返回 transcript / reply / audio_url</span></div>
+      <div style="display:flex;gap:8px;"><span style="background:#1565c0;color:#fff;border-radius:4px;padding:1px 8px;font-weight:700;">⑤</span><span><b>客户端</b> 播放 audio_url，重复 ③④ 共 3~5 轮</span></div>
+      <div style="display:flex;gap:8px;"><span style="background:#1565c0;color:#fff;border-radius:4px;padding:1px 8px;font-weight:700;">⑥</span><span><b>客户端</b> POST /api/session/end → 后端生成画像 → GET /api/report/{id} → 家长页显示专注度曲线+建议</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;padding:10px 14px;font-size:13px;color:#4e342e;">
+    <b>对接口诀：</b>客户端管"会话开始/结束+看报告"，采集管"音频/特征上传"，大数据只管中间处理。
+    只要 <code>session_id</code> 一致、字段枚举不越界、音频 <15MB，就能串起来。详细字段见 <code>docs/data-contract.md</code>。
+  </div>
+</div>
+</html>

@@ -1,0 +1,14 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Local SQLite runtime data (including WAL auxiliary files)
+app/data/*.db
+app/data/*.db-shm
+app/data/*.db-wal
+
+# Local environment and editor settings
+.venv/
+venv/
+.env
+.vscode/
