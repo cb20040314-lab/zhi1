@@ -133,7 +133,16 @@
   var sid = null;
   var turnNo = 0;
   var foc = 0;
+  var ended = false;        // 会话已结束时锁定对话/特征/结束操作
   var $ = function (id) { return document.getElementById(id); };
+
+  function lockSessionEnded() {
+    if (!ended) return;
+    ["btnSend", "btnFocus", "btnEnd"].forEach(function (id) {
+      var el = $(id); el.disabled = true; el.style.opacity = ".5";
+    });
+    $("sidOut").textContent = "session_id: " + sid + "（已结束）";
+  }
 
   function base() {
     var v = $("baseUrl").value.trim();
@@ -192,6 +201,10 @@
       });
       sid = r.session_id;
       turnNo = 0;
+      ended = false;
+      ["btnSend", "btnFocus", "btnEnd"].forEach(function (id) {
+        var el = $(id); el.disabled = false; el.style.opacity = "1";
+      });
       $("sidOut").textContent = "session_id: " + sid;
       log("session start -> " + sid, "ok");
     } catch (e) { log("session start FAIL: " + e.message, "err"); alert("创建会话失败：" + e.message); }
@@ -259,14 +272,27 @@
   // ---- 步骤4：结束会话 ----
   $("btnEnd").addEventListener("click", async function () {
     if (!sid) { alert("先创建会话"); return; }
+    $("btnEnd").disabled = true;
     try {
       var r = await api("/api/session/end", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sid })
       });
+      ended = true;
+      lockSessionEnded();
       log("session end ok, report_id=" + r.report_id, "ok");
       $("btnReport").click();
-    } catch (e) { log("session end FAIL: " + e.message, "err"); alert("结束失败：" + e.message); }
+    } catch (e) {
+      if (String(e.message).indexOf("已结束") > -1) {
+        ended = true; lockSessionEnded();
+        log("session already ended, 已锁定", "ok");
+        $("btnReport").click();
+      } else {
+        $("btnEnd").disabled = false;
+        log("session end FAIL: " + e.message, "err");
+        alert("结束失败：" + e.message);
+      }
+    }
   });
 
   // ---- 步骤4：查询报告 ----
