@@ -69,8 +69,9 @@ def generate_reply(transcript: str, history: list[dict], turn_index: int) -> str
                 json=payload,
                 timeout=_TIMEOUT_S,
             )
-            if resp.status_code == 429 and attempt == 0:
-                time.sleep(1)
+            # 429 限流或 5xx 服务端偶发故障：第一次失败时稍等重试
+            if attempt == 0 and (resp.status_code == 429 or resp.status_code >= 500):
+                time.sleep(2)
                 continue
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"]
