@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>后端验证台 · 智能教育机器人</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230ea5e9'/%3E%3Cpath d='M9 20a7 7 0 0 1 14 0' stroke='%23fff' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='13' cy='14' r='1.8' fill='%23fff'/%3E%3Ccircle cx='19' cy='14' r='1.8' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; background: #f1f5f9; color: #0f172a; padding: 16px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand svg { width: 34px; height: 34px; }
+  h1 { font-size: 20px; color: #0f172a; }
+  .sub { font-size: 13px; color: #64748b; margin-top: 2px; }
+  .conn { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .conn input { width: 210px; font-size: 16px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
+  button { font-size: 16px; padding: 9px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: #0ea5e9; color: #fff; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-ghost { background: #e2e8f0; color: #334155; }
+  .btn-warn { background: #f59e0b; color: #fff; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: #e2e8f0; color: #475569; }
+  .status .dot { width: 9px; height: 9px; border-radius: 50%; background: #94a3b8; }
+  .status.ok { background: #d1fae5; color: #065f46; } .status.ok .dot { background: #10b981; }
+  .status.err { background: #fee2e2; color: #991b1b; } .status.err .dot { background: #ef4444; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .card h2 { font-size: 15px; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .step-num { display: inline-flex; width: 22px; height: 22px; border-radius: 6px; background: #0ea5e9; color: #fff; font-size: 13px; align-items: center; justify-content: center; flex: none; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .fld { flex: 1; min-width: 180px; font-size: 16px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+  .mono { font-family: Consolas, Menlo, monospace; }
+  .out { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.7; color: #334155; word-break: break-all; }
+  .out .label { color: #64748b; font-size: 12px; }
+  .transcript { font-size: 14px; margin: 4px 0; }
+  .reply { font-size: 14px; background: #eff6ff; border-left: 3px solid #0ea5e9; padding: 8px 10px; border-radius: 0 6px 6px 0; margin: 6px 0; }
+  audio { width: 100%; max-width: 320px; margin-top: 6px; }
+  .progress { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; margin-top: 6px; }
+  .progress i { display: block; height: 100%; width: 0; background: #10b981; transition: width .2s; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .kv .item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+  .kv .item b { display: block; font-size: 18px; color: #0f172a; }
+  .kv .item span { font-size: 12px; color: #64748b; }
+  .curve { display: flex; align-items: flex-end; gap: 4px; height: 64px; margin-top: 6px; }
+  .curve .bar { flex: 1; background: #0ea5e9; border-radius: 3px 3px 0 0; min-width: 6px; }
+  .advice li { margin: 4px 0 4px 18px; font-size: 13px; color: #475569; }
+  .log { font-family: Consolas, Menlo, monospace; font-size: 12px; background: #0f172a; color: #a5b4fc; border-radius: 8px; padding: 10px 12px; max-height: 160px; overflow-y: auto; }
+  .log .ok { color: #6ee7b7; } .log .err { color: #fca5a5; }
+  .hint { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+  details { margin-top: 8px; } summary { cursor: pointer; font-size: 13px; color: #0ea5e9; }
+  pre { font-size: 11px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0ea5e9"/><path d="M9 20a7 7 0 0 1 14 0" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="13" cy="14" r="1.8" fill="#fff"/><circle cx="19" cy="14" r="1.8" fill="#fff"/></svg>
+      <div>
+        <h1>后端验证台</h1>
+        <div class="sub">智能教育机器人 · 树莓派跑通验证 · 数据负责人</div>
+      </div>
+    </div>
+    <div class="conn">
+      <input id="baseUrl" placeholder="服务地址，默认同源" value="">
+      <button class="btn-ghost" id="btnCheck">检查服务</button>
+      <span class="status" id="srvStatus"><i class="dot"></i>未检查</span>
+    </div>
+  </header>
+
+  <!-- ===== 步骤1：服务自检 ===== -->
+  <section class="card">
+    <h2><span class="step-num">1</span>服务自检</h2>
+    <div class="out mono" id="healthOut">点上方「检查服务」，确认后端活着、表已建好。</div>
+  </section>
+
+  <!-- ===== 步骤2：创建会话 + 语音对话 ===== -->
+  <section class="card">
+    <h2><span class="step-num">2</span>创建会话 · 语音对话</h2>
+    <div class="row">
+      <button class="btn-primary" id="btnStart">创建会话</button>
+      <span class="mono" id="sidOut" style="font-size:13px;color:#64748b;">（无会话）</span>
+    </div>
+    <div class="row">
+      <input type="file" id="audioFile" class="fld" accept="audio/*" style="min-width:220px;">
+      <button class="btn-success" id="btnSend">上传并对话</button>
+    </div>
+    <div class="out" id="turnOut">
+      <div class="label">上传音频后，这里显示识别文字与机器人回答（可连续多轮）。</div>
+    </div>
+    <div class="hint">选择一段音频文件（手机录的音、wav/mp3 均可），点「上传并对话」。</div>
+  </section>
+
+  <!-- ===== 步骤3：模拟专注度特征 ===== -->
+  <section class="card">
+    <h2><span class="step-num">3</span>模拟专注度特征（20 条）</h2>
+    <div class="row">
+      <button class="btn-primary" id="btnFocus">发送 20 条特征</button>
+      <span class="mono" id="focusCount" style="font-size:13px;color:#64748b;">0 / 20</span>
+    </div>
+    <div class="progress"><i id="focusBar"></i></div>
+    <div class="hint">模拟采集端每 1~2 秒上报一条人脸特征（表情/朝向/眼睛/质量）。</div>
+  </section>
+
+  <!-- ===== 步骤4：结束会话 + 报告 ===== -->
+  <section class="card">
+    <h2><span class="step-num">4</span>结束会话 · 查看报告</h2>
+    <div class="row">
+      <button class="btn-warn" id="btnEnd">结束会话并生成画像</button>
+      <button class="btn-ghost" id="btnReport">查询报告</button>
+    </div>
+    <div class="kv" id="reportSummary" style="display:none;"></div>
+    <div class="out" id="reportOut">
+      <div class="label">结束会话后，这里显示对话画像与专注度综合报告。</div>
+    </div>
+  </section>
+
+  <!-- ===== 请求日志 ===== -->
+  <section class="card">
+    <h2>请求日志</h2>
+    <div class="log" id="logBox"></div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var BASE = "";            // 默认同源；可在输入框改为 http://ip:8000
+  var sid = null;
+  var turnNo = 0;
+  var foc = 0;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function base() {
+    var v = $("baseUrl").value.trim();
+    return v ? v.replace(/\/+$/, "") : "";
+  }
+
+  function setStatus(ok, text) {
+    var el = $("srvStatus");
+    el.className = "status " + (ok ? "ok" : "err");
+    el.innerHTML = "<i class='dot'></i>" + text;
+  }
+
+  function log(msg, cls) {
+    var box = $("logBox");
+    var line = document.createElement("div");
+    line.className = cls || "";
+    var t = new Date().toTimeString().slice(0, 8);
+    line.textContent = "[" + t + "] " + msg;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function api(path, opts) {
+    var res = await fetch(base() + path, opts);
+    var body;
+    try { body = await res.json(); } catch (e) { body = null; }
+    if (!res.ok) {
+      var msg = body && body.detail ? (body.detail.message || JSON.stringify(body.detail)) : ("HTTP " + res.status);
+      throw new Error(msg);
+    }
+    return body;
+  }
+
+  // ---- 步骤1：服务自检 ----
+  $("btnCheck").addEventListener("click", async function () {
+    $("healthOut").textContent = "检查中…";
+    try {
+      var h = await api("/api/health");
+      $("healthOut").textContent = JSON.stringify(h, null, 2);
+      setStatus(h.status === "ok", "服务正常 · Mock=" + h.mock + " · 表=" + (h.tables_ok ? "OK" : "缺"));
+      log("health OK: mock=" + h.mock, "ok");
+    } catch (e) {
+      $("healthOut").textContent = "连接失败：" + e.message;
+      setStatus(false, "连接失败");
+      log("health FAIL: " + e.message, "err");
+    }
+  });
+
+  // ---- 步骤2：创建会话 ----
+  $("btnStart").addEventListener("click", async function () {
+    try {
+      var r = await api("/api/session/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}"
+      });
+      sid = r.session_id;
+      turnNo = 0;
+      $("sidOut").textContent = "session_id: " + sid;
+      log("session start -> " + sid, "ok");
+    } catch (e) { log("session start FAIL: " + e.message, "err"); alert("创建会话失败：" + e.message); }
+  });
+
+  // ---- 步骤2：上传音频并对话 ----
+  $("btnSend").addEventListener("click", async function () {
+    if (!sid) { alert("先创建会话"); return; }
+    var f = $("audioFile").files[0];
+    if (!f) { alert("请选择音频文件"); return; }
+    var fd = new FormData();
+    fd.append("session_id", sid);
+    fd.append("audio", f);
+    $("btnSend").disabled = true;
+    try {
+      var r = await api("/api/turn", { method: "POST", body: fd });
+      turnNo = r.turn;
+      var html = "<div class='label'>第 " + r.turn + " 轮</div>"
+        + "<div class='transcript'>识别：<b>" + esc(r.transcript) + "</b></div>"
+        + "<div class='reply'>回答：" + esc(r.reply) + "</div>"
+        + (r.audio_url ? "<audio controls src='" + base() + r.audio_url + "'></audio>" : "")
+        + "<div class='hint'>audio: " + r.audio_url + "</div>";
+      $("turnOut").innerHTML = html;
+      log("turn " + r.turn + " ok: " + (r.transcript || "").slice(0, 30), "ok");
+    } catch (e) {
+      log("turn FAIL: " + e.message, "err");
+      $("turnOut").innerHTML = "<div class='label'>请求失败：" + esc(e.message) + "</div>";
+    } finally {
+      $("btnSend").disabled = false;
+    }
+  });
+
+  // ---- 步骤3：模拟 20 条特征 ----
+  var EXPR = ["neutral","happy","neutral","surprised","neutral","sad","neutral","happy"];
+  var HEAD = ["front","front","left","front","front","right","front","front"];
+  var EYE  = ["open","open","open","open","closed","open","open","open"];
+  $("btnFocus").addEventListener("click", async function () {
+    if (!sid) { alert("先创建会话"); return; }
+    $("btnFocus").disabled = true;
+    foc = 0;
+    var t0 = Date.now();
+    for (var i = 0; i < 20; i++) {
+      var present = (i % 5 !== 3); // 第 3、8、13、18 条模拟人脸缺席
+      var feat = {
+        session_id: sid,
+        timestamp: t0 + i * 1000,
+        face_present: present,
+        expression: EXPR[i % EXPR.length],
+        head_direction: HEAD[i % HEAD.length],
+        eye_state: EYE[i % EYE.length],
+        quality: (i === 7 || i === 19) ? 0.4 : +(0.6 + (i % 5) * 0.08).toFixed(2)
+      };
+      try {
+        await api("/api/focus", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(feat) });
+      } catch (e) { log("focus " + (i + 1) + " FAIL: " + e.message, "err"); }
+      foc = i + 1;
+      $("focusCount").textContent = foc + " / 20";
+      $("focusBar").style.width = (foc / 20 * 100) + "%";
+      await new Promise(function (r) { setTimeout(r, 120); });
+    }
+    $("btnFocus").disabled = false;
+    log("focus x20 done", "ok");
+  });
+
+  // ---- 步骤4：结束会话 ----
+  $("btnEnd").addEventListener("click", async function () {
+    if (!sid) { alert("先创建会话"); return; }
+    try {
+      var r = await api("/api/session/end", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sid })
+      });
+      log("session end ok, report_id=" + r.report_id, "ok");
+      $("btnReport").click();
+    } catch (e) { log("session end FAIL: " + e.message, "err"); alert("结束失败：" + e.message); }
+  });
+
+  // ---- 步骤4：查询报告 ----
+  $("btnReport").addEventListener("click", async function () {
+    if (!sid) { alert("先创建会话"); return; }
+    try {
+      var rep = await api("/api/report/" + encodeURIComponent(sid));
+      var dq = rep.dialogue_quality || {}, fo = rep.focus || {};
+      $("reportSummary").style.display = "grid";
+      $("reportSummary").innerHTML =
+        kv("回合数", dq.total_turns || 0) +
+        kv("理由深度", dq.reasoning_level || "—") +
+        kv("有效特征", (fo.valid_feature_count || 0) + "/" + (fo.feature_count || 0)) +
+        kv("参与度", fo.engagement_score != null ? fo.engagement_score : "—") +
+        kv("建议", (rep.advice || []).length + " 条");
+      var curveHtml = "";
+      var curve = fo.attention_curve || [];
+      if (curve.length) {
+        var max = 1;
+        curve.forEach(function (p) { if (p.engagement > max) max = p.engagement; });
+        curveHtml = "<div class='label'>专注度曲线（每窗口参与度）</div><div class='curve'>";
+        curve.forEach(function (p) {
+          var hPct = Math.max(4, Math.round(p.engagement / max * 100));
+          curveHtml += "<div class='bar' style='height:" + hPct + "%' title='参与度 " + p.engagement + "'></div>";
+        });
+        curveHtml += "</div>";
+      }
+      var adviceHtml = "<ul class='advice'>" + (rep.advice || []).map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("") + "</ul>";
+      $("reportOut").innerHTML =
+        "<div class='label'>对话画像与专注度报告（report_id: " + esc(rep.report_id) + "）</div>" +
+        curveHtml + adviceHtml +
+        "<details><summary>查看完整 JSON</summary><pre>" + esc(JSON.stringify(rep, null, 2)) + "</pre></details>";
+      log("report ok: turns=" + dq.total_turns + " engagement=" + fo.engagement_score, "ok");
+    } catch (e) { log("report FAIL: " + e.message, "err"); alert("查询失败：" + e.message); }
+  });
+
+  function kv(k, v) { return "<div class='item'><b>" + v + "</b><span>" + k + "</span></div>"; }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+})();
+</script>
+</body>
+</html>

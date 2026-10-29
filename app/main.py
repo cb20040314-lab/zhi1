@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .routers import ingest, turn
@@ -32,6 +33,14 @@ def _load_dotenv(path: str) -> None:
 _load_dotenv(os.path.join(os.path.dirname(BASE_DIR), ".env"))
 
 app = FastAPI(title="智能教育机器人后端", version="2.0")
+
+# 允许跨域：手机页 / 家长页 / 验证台可能从不同源或 file:// 直接调用
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(ingest.router)
 app.include_router(turn.router)
