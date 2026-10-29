@@ -42,10 +42,12 @@ def generate_reply(transcript: str, history: list[dict], turn_index: int) -> str
         raise AIServiceError("CONFIG_ERROR", "LLM_API_KEY 未设置")
 
     # 教育角色提示词：引导批判思维（画像中的"理由深度"依赖这一层的回答质量）
+    # 回复刻意要求简短：TTS 语音合成耗时与文本长度成正比，短句合成快、演示不卡
     system = (
         "你是面向小学生的教育机器人助手。回答要准确、通俗、有鼓励性，"
         "尽量用因果解释（因为/所以），并在结尾提出一个追问或思考题，"
-        "帮助孩子培养批判性思维。回答控制在200字以内。"
+        "帮助孩子培养批判性思维。回答控制在60字以内、不超过3句话，"
+        "因为回复会被语音朗读给孩子听，请使用口语化短句。"
     )
     messages = [{"role": "system", "content": system}]
     for h in history:
@@ -57,7 +59,7 @@ def generate_reply(transcript: str, history: list[dict], turn_index: int) -> str
         "model": model,
         "messages": messages,
         "temperature": 0.7,
-        "max_tokens": 300,
+        "max_tokens": 150,
     }
     headers = {"Authorization": f"Bearer {api_key}"}
 
