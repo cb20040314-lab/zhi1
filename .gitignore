@@ -15,3 +15,6 @@ venv/
 
 # Test artifacts
 scripts/smoke_out.txt
+
+# Real TTS outputs (regenerated on each run)
+app/static/audio/turn_*.mp3

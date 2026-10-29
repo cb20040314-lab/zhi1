@@ -67,8 +67,10 @@ def main() -> None:
     # 2. TTS（先生成音频，再测 ASR 用同一段文本）
     try:
         url = tts.synthesize("你好，小朋友，我们来学点有趣的知识吧", 1)
+        # 音频写在 app/static/audio 下：url 形如 /static/audio/xxx，对应 app + url
         fpath = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "app",
             url.lstrip("/"),
         )
         size = os.path.getsize(fpath) if os.path.exists(fpath) else 0
